@@ -1,0 +1,18 @@
+<?php
+
+set_include_path(implode(PATH_SEPARATOR, array(
+	realpath('/path/to/zend/library'), // path to zend framework
+	realpath('/path/to/sirprize/rest/lib') // path to rest lib
+)));
+
+$frontendOptions = array(
+	'lifetime' => 7200,
+	'automatic_serialization' => true
+);
+
+$backendOptions = array(
+	'cache_dir' => dirname(dirname(__FILE__)).'/_cache/'
+);
+
+require_once 'Zend/Cache.php';
+$cache = \Zend_Cache::factory('Core', 'File', $frontendOptions, $backendOptions);

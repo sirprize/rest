@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+require_once '../_config.php';
+
+require_once 'Sirprize/Rest/Client.php';
+$client = new \Sirprize\Rest\Client();
+
+require_once 'Zend/Uri.php';
+$uri = \Zend_Uri::factory('http://example.com');
+
+$response = $client->setUri($uri)->get();
+print $response->getHttpResponse()->getBody();

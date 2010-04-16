@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+require_once '../_config.php';
+
+require_once 'Sirprize/Rest/Client.php';
+$client = new \Sirprize\Rest\Client();
+
+require_once 'Zend/Uri.php';
+$uri = \Zend_Uri::factory('http://example.com/target.php'); // this should point to a www-hosted target.php
+
+$response = $client->setUri($uri)->post(array('aaa' => 'AAA', 'bbb' => 'BBB'));
+print $response->getHttpResponse()->getBody();
