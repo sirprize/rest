@@ -24,8 +24,8 @@ class ResponseHandler
 	
     protected $_httpResponse = null;
 	protected $_loaded = false;
-	protected $_serviceErrorCode = null;
-	protected $_serviceErrorMessage = null;
+	protected $_code = null;
+	protected $_message = null;
 	
 	
 	
@@ -34,7 +34,6 @@ class ResponseHandler
     {
 		if($this->_httpResponse !== null)
 		{
-			require_once 'Sirprize/Rest/Exception.php';
 			throw new \Sirprize\Rest\Exception('setHttpResponse() has already been called');
 		}
 		
@@ -48,7 +47,6 @@ class ResponseHandler
     {
 		if($this->_httpResponse === null)
 		{
-			require_once 'Sirprize/Rest/Exception.php';
 			throw new \Sirprize\Rest\Exception('call setHttpResponse() before '.__METHOD__);
 		}
 		
@@ -58,11 +56,11 @@ class ResponseHandler
 	
 	
 	
-	public function getErrorCode()
+	public function getCode()
     {
-		if($this->_serviceErrorCode !== null)
+		if($this->_code !== null)
 		{
-			return $this->_serviceErrorCode;
+			return $this->_code;
 		}
 		
 		if($this->getHttpResponse()->isError())
@@ -75,11 +73,11 @@ class ResponseHandler
     
     
     
-    public function getErrorMessage()
+    public function getMessage()
     {
-		if($this->_serviceErrorMessage !== null)
+		if($this->_message !== null)
 		{
-			return $this->_serviceErrorMessage;
+			return $this->_message;
 		}
 		
 		if($this->getHttpResponse()->isError())
@@ -96,8 +94,8 @@ class ResponseHandler
     {
     	return (
     		$this->getHttpResponse()->isError() ||
-    		$this->getErrorCode() !== null ||
-    		$this->getErrorMessage() !== null
+    		$this->getCode() !== null ||
+    		$this->getMessage() !== null
     	);
     }
 	
@@ -105,7 +103,6 @@ class ResponseHandler
 	
 	public function handleErrors($errno, $errstr, $errfile = null, $errline = null, array $errcontext = null)
 	{
-		require_once 'Sirprize/Rest/Exception.php';
 		throw new \Sirprize\Rest\Exception($errstr);
 	}
 	
@@ -128,15 +125,15 @@ class ResponseHandler
 	
 	protected function _makeLoadCheck()
     {
+		/*
 		if($this->getHttpResponse()->isError())
 		{
-			require_once 'Sirprize/Rest/Exception.php';
+			#require_once 'Sirprize/Rest/Exception.php';
 			throw new \Sirprize\Rest\Exception('response can only be loaded from a successful http response');
 		}
-		
+		*/
 		if($this->_loaded)
 		{
-			require_once 'Sirprize/Rest/Exception.php';
 			throw new \Sirprize\Rest\Exception('response already loaded');
 		}
     }

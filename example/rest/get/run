@@ -3,7 +3,7 @@
 
 require_once '../_config.php';
 
-require_once 'Sirprize/Rest/Client.php';
+#require_once 'Sirprize/Rest/Client.php';
 $client = new \Sirprize\Rest\Client();
 
 require_once 'Zend/Uri.php';

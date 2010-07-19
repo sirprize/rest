@@ -18,9 +18,6 @@
 namespace Sirprize\Rest\ResponseHandler;
 
 
-require_once 'Sirprize/Rest/ResponseHandler.php';
-
-
 class SimpleXml extends \Sirprize\Rest\ResponseHandler
 {
     
@@ -33,9 +30,12 @@ class SimpleXml extends \Sirprize\Rest\ResponseHandler
     {
 		$this->_makeLoadCheck();
 		
-		set_error_handler(array($this, 'handleErrors'));
-		$this->_simpleXml = simplexml_load_string($this->getHttpResponse()->getBody());
-		restore_error_handler();
+		if($this->getHttpResponse()->getBody())
+		{
+			set_error_handler(array($this, 'handleErrors'));
+			$this->_simpleXml = simplexml_load_string($this->getHttpResponse()->getBody());
+			restore_error_handler();
+		}
 		
 		$this->_loaded = true;
     	return $this;

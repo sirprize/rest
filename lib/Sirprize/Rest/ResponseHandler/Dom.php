@@ -18,9 +18,6 @@
 namespace Sirprize\Rest\ResponseHandler;
 
 
-require_once 'Sirprize/Rest/ResponseHandler.php';
-
-
 class Dom extends \Sirprize\Rest\ResponseHandler
 {
     
@@ -33,10 +30,13 @@ class Dom extends \Sirprize\Rest\ResponseHandler
     {
 		$this->_makeLoadCheck();
 		
-		set_error_handler(array($this, 'handleErrors'));
-		$this->_dom = new \DOMDocument();
-		$this->_dom->loadXml($this->getHttpResponse()->getBody());
-		restore_error_handler();
+		if($this->getHttpResponse()->getBody())
+		{
+			set_error_handler(array($this, 'handleErrors'));
+			$this->_dom = new \DOMDocument();
+			$this->_dom->loadXml($this->getHttpResponse()->getBody());
+			restore_error_handler();
+		}
 		
 		$this->_loaded = true;
     	return $this;

@@ -90,7 +90,6 @@ class Client
     {
 		if($this->_uri === null && $throwException)
 		{
-			require_once 'Sirprize/Rest/Exception.php';
 			throw new \Sirprize\Rest\Exception('call setUri before '.__METHOD__);
 		}
 		
@@ -109,7 +108,6 @@ class Client
 	{
 		if($this->_responseHandler === null)
 		{
-			require_once 'Sirprize/Rest/ResponseHandler.php';
 		 	$this->_responseHandler = new \Sirprize\Rest\ResponseHandler();
 		}
 		
@@ -117,7 +115,7 @@ class Client
 	}
 	
 	
-	public function get(array $args = array(), array $headers = array())
+	public function get(array $args = array(), array $headers = array(), $numRetries = 1)
     {
 		$httpResponse = false;
 		$responseHandler = $this->_getResponseHandler(); // keep local reference
@@ -130,15 +128,38 @@ class Client
 		
 		if(!$httpResponse)
 		{
-			$httpResponse = $this->_getHttpClient()
-				->resetParameters()
-				->setUri($this->getUri())
-				->setHeaders($headers)
-				->setParameterGet($args)
-				->request('GET')
-			;
+			// response could not be loaded from cache, time to connect to service
+			$attempts = 0;
+			$isError = true;
+			
+			while($attempts < $numRetries + 1 && $isError)
+			{
+				$attempts++;
+				
+				try {
+					$httpResponse = $this->_getHttpClient()
+						->resetParameters()
+						->setUri($this->getUri())
+						->setHeaders($headers)
+						->setParameterGet($args)
+						->request('GET')
+					;
+				
+					$isError = $httpResponse->isError();
+					#print $attempts."\n";
+				}
+				catch(\Exception $e) {
+					#print $attempts."\n";
+				}
+			}
 		}
 		
+		if($httpResponse === false)
+		{
+			throw new \Sirprize\Rest\Exception("connection failed (after $attempts attempts): ".__METHOD__);
+		}
+		
+		/*
 		$responseHandler->setHttpResponse($httpResponse);
 		
 		if($httpResponse->isError())
@@ -148,6 +169,18 @@ class Client
 		}
 		
 		$responseHandler->load($httpResponse);
+		*/
+		
+		$responseHandler
+			->setHttpResponse($httpResponse)
+			->load($httpResponse)
+		;
+		
+		if($responseHandler->isError())
+		{
+			$this->_resetRequestHandlingParams();
+			return $responseHandler;
+		}
 		
 		if($this->_getCache() && $this->_cacheId)
 		{
