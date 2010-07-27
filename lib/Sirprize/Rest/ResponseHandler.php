@@ -9,7 +9,7 @@
  * with this package in the file LICENSE.txt
  *
  * @category   Sirprize
- * @package    Flickr
+ * @package    Sirprize\Rest
  * @copyright  Copyright (c) 2010, Christian Hoegl, Switzerland (http://sirprize.me)
  * @license    MIT License
  */
@@ -23,36 +23,30 @@ class ResponseHandler
     
 	
     protected $_httpResponse = null;
-	protected $_loaded = false;
 	protected $_code = null;
 	protected $_message = null;
 	
 	
 	
-	
-	public function setHttpResponse(\Zend_Http_Response $httpResponse)
-    {
-		if($this->_httpResponse !== null)
-		{
-			throw new \Sirprize\Rest\Exception('setHttpResponse() has already been called');
-		}
-		
-    	$this->_httpResponse = $httpResponse;
+	protected function _reset()
+	{
+		$this->_httpResponse = null;
+		$this->_code = null;
+		$this->_message = null;
 		return $this;
-    }
+	}
+    
+    
 	
-    
-    
     public function getHttpResponse()
     {
 		if($this->_httpResponse === null)
 		{
-			throw new \Sirprize\Rest\Exception('call setHttpResponse() before '.__METHOD__);
+			throw new \Sirprize\Rest\Exception('call load() before '.__METHOD__);
 		}
 		
     	return $this->_httpResponse;
     }
-	
 	
 	
 	
@@ -101,7 +95,7 @@ class ResponseHandler
 	
 	
 	
-	public function handleErrors($errno, $errstr, $errfile = null, $errline = null, array $errcontext = null)
+	public function handleLoadErrors($errno, $errstr, $errfile = null, $errline = null, array $errcontext = null)
 	{
 		throw new \Sirprize\Rest\Exception($errstr);
 	}
@@ -110,32 +104,16 @@ class ResponseHandler
 	
 	public function isLoaded()
     {
-    	return $this->_loaded;
+    	return ($this->_httpResponse !== null);
     }
 	
 	
 	
-	public function load()
+	public function load(\Zend_Http_Response $httpResponse)
     {
-		$this->_makeLoadCheck();
+		$this->_reset();
+    	$this->_httpResponse = $httpResponse;
     	return $this;
-    }
-	
-	
-	
-	protected function _makeLoadCheck()
-    {
-		/*
-		if($this->getHttpResponse()->isError())
-		{
-			#require_once 'Sirprize/Rest/Exception.php';
-			throw new \Sirprize\Rest\Exception('response can only be loaded from a successful http response');
-		}
-		*/
-		if($this->_loaded)
-		{
-			throw new \Sirprize\Rest\Exception('response already loaded');
-		}
     }
 	
 }

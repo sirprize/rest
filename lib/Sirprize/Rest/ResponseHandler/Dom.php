@@ -9,7 +9,7 @@
  * with this package in the file LICENSE.txt
  *
  * @category   Sirprize
- * @package    Flickr
+ * @package    Sirprize\Rest
  * @copyright  Copyright (c) 2010, Christian Hoegl, Switzerland (http://sirprize.me)
  * @license    MIT License
  */
@@ -26,19 +26,19 @@ class Dom extends \Sirprize\Rest\ResponseHandler
 	
 	
 	
-	public function load()
+	public function load(\Zend_Http_Response $httpResponse)
     {
-		$this->_makeLoadCheck();
+		$this->_reset();
 		
-		if($this->getHttpResponse()->getBody())
+		if($httpResponse->getBody())
 		{
-			set_error_handler(array($this, 'handleErrors'));
+			set_error_handler(array($this, 'handleLoadErrors'));
 			$this->_dom = new \DOMDocument();
-			$this->_dom->loadXml($this->getHttpResponse()->getBody());
+			$this->_dom->loadXml($httpResponse->getBody());
 			restore_error_handler();
 		}
 		
-		$this->_loaded = true;
+		$this->_httpResponse = $httpResponse;
     	return $this;
     }
 	

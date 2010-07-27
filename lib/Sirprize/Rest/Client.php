@@ -9,7 +9,7 @@
  * with this package in the file LICENSE.txt
  *
  * @category   Sirprize
- * @package    Flickr
+ * @package    Sirprize\Rest
  * @copyright  Copyright (c) 2010, Christian Hoegl, Switzerland (http://sirprize.me)
  * @license    MIT License
  */
@@ -24,13 +24,6 @@ class Client
 	
     protected $_httpClient = null;
 	protected $_cache = null;
-    protected $_uri = null;
-	protected $_responseHandler = null;
-	protected $_cacheId = null;
-	
-	
-    public function __construct(array $config = array())
-    {}
 	
 	
     public function setHttpClient(\Zend_Http_Client $httpClient)
@@ -40,7 +33,7 @@ class Client
     }
 	
 	
-    protected function _getHttpClient()
+    public function getHttpClient()
     {
         if($this->_httpClient === null)
 		{
@@ -59,260 +52,117 @@ class Client
 	}
 	
 	
-	protected function _getCache()
+	public function getCache()
     {
         return $this->_cache;
     }
 	
 	
-	public function setCacheId($cacheId)
+	public static function makeCacheIdFromParts($parts)
 	{
-		$this->_cacheId = $cacheId;
-		return $this;
+		return preg_replace('/[^a-zA-Z0-9_]/', '_', implode('_', $parts));
 	}
 	
 	
-	public function setCacheIdFromParts($parts)
-	{
-		$this->_cacheId = preg_replace('/[^a-zA-Z0-9_]/', '_', implode('_', $parts));
-		return $this;
-	}
-	
-	
-    public function setUri(\Zend_Uri $uri)
-    {
-        $this->_uri = $uri;
-        return $this;
-    }
-	
-	
-    public function getUri($throwException = true)
-    {
-		if($this->_uri === null && $throwException)
-		{
-			throw new \Sirprize\Rest\Exception('call setUri before '.__METHOD__);
-		}
-		
-        return $this->_uri;
-    }
-	
-	
-	public function setResponseHandler(\Sirprize\Rest\ResponseHandler $responseHandler)
-	{
-		$this->_responseHandler = $responseHandler;
-		return $this;
-	}
-	
-	
-	protected function _getResponseHandler()
-	{
-		if($this->_responseHandler === null)
-		{
-		 	$this->_responseHandler = new \Sirprize\Rest\ResponseHandler();
-		}
-		
-		return $this->_responseHandler;
-	}
-	
-	
-	public function get(array $args = array(), array $headers = array(), $numRetries = 1)
+	public function get(\Sirprize\Rest\ResponseHandler $responseHandler, $numRetries = 0, $acceptableHttpErrorCodes = array(), $cacheId = null)
     {
 		$httpResponse = false;
-		$responseHandler = $this->_getResponseHandler(); // keep local reference
+		$fromCache = true;
 		
-		if($this->_getCache() && $this->_cacheId)
+		if($this->getCache() && $cacheId)
 		{
-			require_once 'Zend/Http/Response.php';
-			$httpResponse = $this->_getCache()->load($this->_cacheId);
+			#require_once 'Zend/Http/Response.php';
+			$httpResponse = $this->getCache()->load($cacheId);
 		}
 		
 		if(!$httpResponse)
 		{
 			// response could not be loaded from cache, time to connect to service
-			$attempts = 0;
-			$isError = true;
-			
-			while($attempts < $numRetries + 1 && $isError)
-			{
-				$attempts++;
-				
-				try {
-					$httpResponse = $this->_getHttpClient()
-						->resetParameters()
-						->setUri($this->getUri())
-						->setHeaders($headers)
-						->setParameterGet($args)
-						->request('GET')
-					;
-				
-					$isError = $httpResponse->isError();
-					#print $attempts."\n";
-				}
-				catch(\Exception $e) {
-					#print $attempts."\n";
-				}
-			}
-		}
-		
-		if($httpResponse === false)
-		{
-			throw new \Sirprize\Rest\Exception("connection failed (after $attempts attempts): ".__METHOD__);
-		}
-		
-		/*
-		$responseHandler->setHttpResponse($httpResponse);
-		
-		if($httpResponse->isError())
-		{
-			$this->_resetRequestHandlingParams();
-			return $responseHandler;
+			$fromCache = false;
+			$httpResponse = $this->_request('GET', $numRetries, $acceptableHttpErrorCodes);
 		}
 		
 		$responseHandler->load($httpResponse);
-		*/
-		
-		$responseHandler
-			->setHttpResponse($httpResponse)
-			->load($httpResponse)
-		;
 		
 		if($responseHandler->isError())
 		{
-			$this->_resetRequestHandlingParams();
 			return $responseHandler;
 		}
 		
-		if($this->_getCache() && $this->_cacheId)
+		if($this->getCache() && $cacheId && !$fromCache)
 		{
-			$this->_getCache()->save($httpResponse, $this->_cacheId);
+			$this->getCache()->save($httpResponse, $cacheId);
 		}
 		
-		$this->_resetRequestHandlingParams();
-		return $responseHandler;
-    }
-	
-
-	
-	
-	public function post(array $args = array(), array $headers = array())
-    {
-		$responseHandler = $this->_getResponseHandler(); // keep local reference
-		
-		$httpResponse = $this->_getHttpClient()
-			->resetParameters()
-			->setUri($this->getUri())
-			->setHeaders($headers)
-			->setParameterPost($args)
-			->request('POST')
-		;
-		
-		$responseHandler
-			->setHttpResponse($httpResponse)
-			->load($httpResponse)
-		;
-		
-        $this->_resetRequestHandlingParams();
 		return $responseHandler;
     }
 
 	
 	
-	public function postRaw($data = null, array $headers = array())
+	public function head(\Sirprize\Rest\ResponseHandler $responseHandler)
     {
-		$responseHandler = $this->_getResponseHandler(); // keep local reference
-		
-		$httpResponse = $this->_getHttpClient()
-			->resetParameters()
-			->setUri($this->getUri())
-			->setHeaders($headers)
-			->setRawData($data)
-			->request('POST')
-		;
-		
-        $responseHandler
-			->setHttpResponse($httpResponse)
-			->load($httpResponse)
-		;
-		
-        $this->_resetRequestHandlingParams();
-		return $responseHandler;
+		$httpResponse = $this->getHttpClient()->request('HEAD');
+		return $responseHandler->load($httpResponse);
+    }
+	
+	
+	
+	public function post(\Sirprize\Rest\ResponseHandler $responseHandler)
+    {
+		$httpResponse = $this->getHttpClient()->request('POST');
+		return $responseHandler->load($httpResponse);
     }
 
 	
 	
-	public function put(array $args = array(), array $headers = array())
+	public function put(\Sirprize\Rest\ResponseHandler $responseHandler, $numRetries = 0, $acceptableHttpErrorCodes = array())
     {
-		$responseHandler = $this->_getResponseHandler(); // keep local reference
-		
-		$httpResponse = $this->_getHttpClient()
-			->resetParameters()
-			->setUri($this->getUri())
-			->setHeaders($headers)
-			->setParameterPost($args)
-			->request('PUT')
-		;
-		
-        $responseHandler
-			->setHttpResponse($httpResponse)
-			->load($httpResponse)
-		;
-		
-        $this->_resetRequestHandlingParams();
-		return $responseHandler;
-    }
-
-	
-	
-	public function putRaw($data = null, array $headers = array())
-    {
-		$responseHandler = $this->_getResponseHandler(); // keep local reference
-		
-		$httpResponse = $this->_getHttpClient()
-			->resetParameters()
-			->setUri($this->getUri())
-			->setHeaders($headers)
-			->setRawData($data)
-			->request('PUT')
-		;
-		
-        $responseHandler
-			->setHttpResponse($httpResponse)
-			->load($httpResponse)
-		;
-		
-        $this->_resetRequestHandlingParams();
-		return $responseHandler;
+		$httpResponse = $this->_request('PUT', $numRetries, $acceptableHttpErrorCodes);
+        return $responseHandler->load($httpResponse);
     }
 	
 	
 	
-	public function delete(array $headers = array())
+	public function delete(\Sirprize\Rest\ResponseHandler $responseHandler)
     {
-		$responseHandler = $this->_getResponseHandler(); // keep local reference
-		
-		$httpResponse = $this->_getHttpClient()
-			->resetParameters()
-			->setUri($this->getUri())
-			->setHeaders($headers)
-			->request('DELETE')
-		;
-        
-		$responseHandler
-			->setHttpResponse($httpResponse)
-			->load($httpResponse)
-		;
-		
-        $this->_resetRequestHandlingParams();
-		return $responseHandler;
+		$httpResponse = $this->getHttpClient()->request('DELETE');
+		return $responseHandler->load($httpResponse);
     }
 	
 	
 	
-	protected function _resetRequestHandlingParams()
+	protected function _request($verb, $numRetries, $acceptableHttpErrorCodes = array())
 	{
-		$this->_responseHandler = null;
-		$this->_cacheId = null;
-		return $this;
+		$httpResponse = false;
+		$attempts = 0;
+		$isOk = false;
+		$exception = null;
+		
+		while($attempts < $numRetries + 1 && !$isOk)
+		{
+			$attempts++;
+			
+			try {
+				$httpResponse = $this->getHttpClient()->request($verb);
+				
+				$isOk
+					= (in_array($httpResponse->getStatus(), $acceptableHttpErrorCodes)) // eg don't retry if received status 412 from an amazon s3 copy request with x-amz-copy-source-if-match header
+					? true
+					: !$httpResponse->isError()
+				;
+			}
+			catch(\Exception $e) {
+				#print $attempts."\n";
+				$exception = $e;
+			}
+		}
+		
+		if(!$httpResponse)
+		{
+			throw $exception;
+		}
+		
+		return $httpResponse;
 	}
 
 }
