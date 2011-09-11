@@ -3,12 +3,15 @@
 
 require_once '../_config.php';
 
-#require_once 'Sirprize/Rest/Client.php';
 $client = new \Sirprize\Rest\Client();
-$responseHandler = new \Sirprize\Rest\ResponseHandler\Dom();
 
-require_once 'Zend/Uri.php';
-$uri = \Zend_Uri::factory('http://example.com/target.php'); // this should point to a www-hosted target.php
+$client
+	->getHttpClient()
+	->resetParameters(true)
+	->setUri(\Zend_Uri::factory('http://example.com/target.php')) // this should point to a www-hosted target.php
+	->setParameterPost(array('aa' => 'AA'))
+	->setHeaders(array())
+;
 
-$response = $client->post($responseHandler, $uri, array('aaa' => 'AAA', 'bbb' => 'BBB'));
+$response = $client->post(new \Sirprize\Rest\ResponseHandler());
 print $response->getHttpResponse()->getBody();

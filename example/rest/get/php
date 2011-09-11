@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+require_once '../_config.php';
+
+$client = new \Sirprize\Rest\Client();
+
+$client
+	->getHttpClient()
+	->resetParameters(true)
+	->setUri(\Zend_Uri::factory('http://example.com'))
+	->setParameterGet(array('aaa' => 'AAA'))
+	#->setHeaders(array())
+;
+
+$responseHandler = $client->get(new \Sirprize\Rest\ResponseHandler\Php());
+
+if(!$responseHandler->isError())
+{
+	print_r($responseHandler->getPhp());
+}
+else {
+	print $responseHandler->getMessage();
+}

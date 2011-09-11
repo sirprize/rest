@@ -1,0 +1,24 @@
+#!/usr/bin/env php
+<?php
+
+require_once '../_config.php';
+
+$client = new \Sirprize\Rest\Client();
+
+$client
+	->getHttpClient()
+	->resetParameters(true)
+	->setUri(\Zend_Uri::factory('http://maps.googleapis.com/maps/api/geocode/json'))
+	->setParameterGet(array('address' => 'bern,3007', 'sensor' => 'true'))
+	#->setHeaders(array())
+;
+
+$responseHandler = $client->get(new \Sirprize\Rest\ResponseHandler\Json());
+
+if(!$responseHandler->isError())
+{
+	print_r($responseHandler->getJson());
+}
+else {
+	print $responseHandler->getMessage();
+}
