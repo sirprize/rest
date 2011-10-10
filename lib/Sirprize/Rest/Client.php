@@ -58,12 +58,6 @@ class Client
     }
 	
 	
-	public static function makeCacheIdFromParts($parts)
-	{
-		return preg_replace('/[^a-zA-Z0-9_]/', '_', implode('_', $parts));
-	}
-	
-	
 	public function get(\Sirprize\Rest\ResponseHandler $responseHandler, $numRetries = 0, $acceptableHttpErrorCodes = array(), $cacheId = null)
     {
 		$httpResponse = false;
